@@ -1,6 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+});
 
 const ANALYSIS_PROMPT = `You are an expert resume consultant and ATS optimization specialist. Analyze the following resume against the job description and provide detailed optimization suggestions.
 
@@ -45,25 +47,28 @@ Provide a comprehensive analysis in JSON format with the following structure:
   "topPriorities": ["<top 3-5 most impactful changes to make>"]
 }
 
-Be specific, actionable, and never fabricate experience. Focus on better presenting existing qualifications.`;
+IMPORTANT: Return ONLY valid JSON, no markdown code blocks, no extra text. Be specific, actionable, and never fabricate experience.`;
 
 /**
- * Analyze resume against job description using Gemini
+ * Analyze resume against job description using Groq (Llama 3.3)
  */
 export async function analyzeResume(resumeText, jdText) {
-    const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-            responseMimeType: 'application/json',
-        },
-    });
-
     const prompt = ANALYSIS_PROMPT
         .replace('{resumeText}', resumeText)
         .replace('{jdText}', jdText);
 
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
+    const completion = await groq.chat.completions.create({
+        messages: [
+            {
+                role: 'user',
+                content: prompt,
+            },
+        ],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
+    });
 
+    const response = completion.choices[0]?.message?.content;
     return JSON.parse(response);
 }
