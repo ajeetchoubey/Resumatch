@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, jsonb, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, jsonb, timestamp, pgEnum, vector } from 'drizzle-orm/pg-core';
 
 // ============================================
 // ENUMS
@@ -55,16 +55,13 @@ export const analyses = pgTable('analyses', {
 });
 
 // ============================================
-// RESUME EMBEDDINGS TABLE (Phase 2)
-// Uncomment after enabling pgvector extension in Supabase:
-// Dashboard -> Database -> Extensions -> Search "vector" -> Enable
+// RESUME EMBEDDINGS TABLE
 // ============================================
-// import { vector } from 'drizzle-orm/pg-core';
-// export const resumeEmbeddings = pgTable('resume_embeddings', {
-//     id: uuid('id').primaryKey().defaultRandom(),
-//     resumeId: uuid('resume_id').notNull().references(() => resumes.id, { onDelete: 'cascade' }),
-//     section: text('section').notNull(),
-//     contentHash: text('content_hash').notNull(),
-//     embedding: vector('embedding', { dimensions: 768 }),
-//     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-// });
+export const resumeEmbeddings = pgTable('resume_embeddings', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    resumeId: uuid('resume_id').notNull().references(() => resumes.id, { onDelete: 'cascade' }),
+    section: text('section').notNull(), // 'experience', 'skills', 'education', 'full'
+    contentHash: text('content_hash').notNull(), // for deduplication
+    embedding: vector('embedding', { dimensions: 768 }), // Gemini text-embedding-004
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
